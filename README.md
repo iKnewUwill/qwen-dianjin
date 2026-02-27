@@ -11,6 +11,7 @@
 </div>
 
 ## 🚀 News 
+- **2026.02.27** 🎉 Our papers **FinMCP-Bench** and **CARE** have been accepted by **ICASSP 2026**!
 - **2025.11.15** "[Evaluating, Synthesizing, and Enhancing for Customer Support Conversation](https://arxiv.org/abs/2508.04423)" has been officially accepted by AAAI-2026! 
 - **2025.10.11** "[FinMCP-Bench: Benchmarking LLM Agents for Real-World Financial Tool Use under the Model Context Protocol](./DianJin-TIR/technical%20report_FinMCP_Bench.pdf)" jointly released by Yingmi Fund and partners, is the first benchmark dataset and evaluation framework for real-world financial tool use by LLM agents, built on the MCP.
 - **2025.10.11** "[CARE: Cognitive-reasoning Augmented Reinforcement for Emotional Support Conversation](https://arxiv.org/abs/2510.05122) is now published!"
@@ -112,55 +113,62 @@ Equip developers with a suite of financial APIs and tools, making it easy to int
 If you find our work helpful, feel free to give us a cite.
 
 ```
-@article{care-esc,
-      title={CARE: Cognitive-reasoning Augmented Reinforcement for Emotional Support Conversation}, 
-      author={Jie Zhu and Yuanchen Zhou and Shuo Jiang and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang and Fang Kong},
-      journal={https://arxiv.org/abs/2510.05122},
-      year={2025}
+@inproceedings{csconv,
+  title     = {Evaluating, Synthesizing, and Enhancing for Customer Support Conversation},
+  author    = {Jie Zhu and Huaixia Dou and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang and Fang Kong},
+  booktitle = {Proceedings of AAAI},
+  year      = {2026}
+}
+
+@inproceedings{finmcp-bench,
+  title     = {FinMCP-Bench: Benchmarking LLM Agents for Real-World Financial Tool Use under the Model Context Protocol},
+  author    = {Jie Zhu and Yimin Tian and Boyang Li and Kehao Wu and Zhongzhi Liang and Junhui Li and Xianyin Zhang and Lifan Guo and Feng Chen and Yong Liu and Chi Zhang},
+  booktitle = {Proceedings of ICASSP},
+  year      = {2026}
+}
+
+@inproceedings{care-esc,
+  title     = {CARE: Cognitive-Reasoning Augmented Reinforcement for Emotional Support Conversation},
+  author    = {Jie Zhu and Yuanchen Zhou and Shuo Jiang and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang and Fang Kong},
+  booktitle = {Proceedings of ICASSP},
+  year      = {2026},
 }
 
 @article{fin-prm,
-      title={Fin-PRM: A Domain-Specialized Process Reward Model for Financial Reasoning in Large Language Models}, 
-      author={Yuanchen Zhou and Shuo Jiang and Jie Zhu and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang},
-      journal={https://arxiv.org/abs/2508.15202},
-      year={2025}
+  title   = {Fin-PRM: A Domain-Specialized Process Reward Model for Financial Reasoning in Large Language Models},
+  author  = {Yuanchen Zhou and Shuo Jiang and Jie Zhu and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang},
+  journal = {arXiv preprint arXiv:2508.15202},
+  year    = {2025}
 }
 
 @article{dianjin-ocr-r1,
-  title={DianJin-OCR-R1: Enhancing OCR Capabilities via a Reasoning-and-Tool Interleaved Vision-Language Model},
-  author={Qian Chen, Xianyin Zhang, Lifan Guo, Feng Chen, Chi Zhang},
-  journal={arXiv preprint arXiv:2508.13238},
-  year={2025}
-}
-
-@inproceedings{csconv,
-    title={Evaluating, Synthesizing, and Enhancing for Customer Support Conversation}, 
-    author={Jie Zhu and Huaixia Dou and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang and Fang Kong},
-    booktitle = "AAAI",
-    year = "2026"
+  title   = {DianJin-OCR-R1: Enhancing OCR Capabilities via a Reasoning-and-Tool Interleaved Vision-Language Model},
+  author  = {Qian Chen and Xianyin Zhang and Lifan Guo and Feng Chen and Chi Zhang},
+  journal = {arXiv preprint arXiv:2508.13238},
+  year    = {2025}
 }
 
 @inproceedings{m3finmeeting,
-    title = "M$^3$FinMeeting: A Multilingual, Multi-Sector, and Multi-Task Financial Meeting Understanding Evaluation Dataset",
-    author = "Jie Zhu, Junhui Li, Yalong Wen, Xiandong Li, Lifan Guo, Feng Chen",
-    booktitle = "Findings of ACL",
-    year = "2025",
-    pages = "244--266"
+  title     = {M$^3$FinMeeting: A Multilingual, Multi-Sector, and Multi-Task Financial Meeting Understanding Evaluation Dataset},
+  author    = {Jie Zhu and Junhui Li and Yalong Wen and Xiandong Li and Lifan Guo and Feng Chen},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2025},
+  year      = {2025},
+  pages     = {244--266}
 }
 
 @article{dianjin-r1,
-    title = "DianJin-R1: Evaluating and Enhancing Financial Reasoning in Large Language Models", 
-    author = "Jie Zhu, Qian Chen, Huaixia Dou, Junhui Li, Lifan Guo, Feng Chen, Chi Zhang",
-    journal = "arxiv.org/abs/2504.15716",
-    year = "2025"
+  title   = {DianJin-R1: Evaluating and Enhancing Financial Reasoning in Large Language Models},
+  author  = {Jie Zhu and Qian Chen and Huaixia Dou and Junhui Li and Lifan Guo and Feng Chen and Chi Zhang},
+  journal = {arXiv preprint arXiv:2504.15716},
+  year    = {2025}
 }
 
 @inproceedings{cflue,
-    title = "Benchmarking Large Language Models on CFLUE - A Chinese Financial Language Understanding Evaluation Dataset",
-    author = "Jie Zhu, Junhui Li, Yalong Wen, Lifan Guo",
-    booktitle = "Findings of ACL",
-    year = "2024",
-    pages = "5673--5693",
+  title     = {Benchmarking Large Language Models on CFLUE - A Chinese Financial Language Understanding Evaluation Dataset},
+  author    = {Jie Zhu and Junhui Li and Yalong Wen and Lifan Guo},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2024},
+  year      = {2024},
+  pages     = {5673--5693}
 }
 ```
 
