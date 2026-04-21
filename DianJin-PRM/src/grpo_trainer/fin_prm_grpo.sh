@@ -2,9 +2,9 @@ set -x
 
 python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
-    data.train_files=DianJin-PRM/src/output/train.parquet \
-    data.val_files=DianJin-PRM/src/output/test.parquet \
-    data.train_batch_size=32 \
+    data.train_files=/root/workspace/qwen-dianjin/DianJin-PRM/src/output/train.parquet \
+    data.val_files=/root/workspace/qwen-dianjin/DianJin-PRM/src/output/test.parquet \
+    data.train_batch_size=4 \
     data.max_prompt_length=2048 \
     data.max_response_length=16384 \
     actor_rollout_ref.rollout.enable_chunked_prefill=true \
@@ -14,7 +14,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.model.path=Qwen/Qwen2.5-7B-Instruct \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \
-    actor_rollout_ref.actor.ppo_mini_batch_size=32 \
+    actor_rollout_ref.actor.ppo_mini_batch_size=4 \
     actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 \
     actor_rollout_ref.actor.use_kl_loss=True \
     actor_rollout_ref.actor.kl_loss_coef=0.001 \
@@ -31,7 +31,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu=1 \
     actor_rollout_ref.ref.fsdp_config.param_offload=True \
     reward_model.enable=true \
-    reward_model.model.path=DianJin-PRM/src/output/checkpoint \
+    reward_model.model.path=/root/autodl-tmp/data/dianjin/checkpoint\
     reward_model.model.trust_remote_code=true \
     reward_model.micro_batch_size_per_gpu=1 \
     custom_reward_function.path=null \
@@ -40,7 +40,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger=['console','tensorboard'] \
     trainer.project_name='verl_grpo' \
     trainer.experiment_name='fin_prm_grpo' \
-    trainer.n_gpus_per_node=8 \
+    trainer.n_gpus_per_node=1 \
     trainer.nnodes=1 \
     trainer.save_freq=20 \
     trainer.test_freq=5 \

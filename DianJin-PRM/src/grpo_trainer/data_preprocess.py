@@ -10,8 +10,8 @@ from datasets import Dataset
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data_path", default="./cflue/knowledge/train.json")
-    parser.add_argument("--prompt_template_dir", default='DianJin-PRM/src/templates/rollout_prompt.txt')
+    parser.add_argument("--data_path", default="/root/autodl-tmp/data/tongyi_dianjin/CFLUE/knowledge/train.json")
+    parser.add_argument("--prompt_template_dir", default='/root/workspace/qwen-dianjin/DianJin-PRM/src/templates/rollout_prompt.txt')
     parser.add_argument("--output_dir", default="./output/")
     args = parser.parse_args()
 

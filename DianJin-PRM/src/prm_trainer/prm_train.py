@@ -1,3 +1,10 @@
+import os
+os.environ['HF_HOME'] = '/root/autodl-tmp/huggingface'
+os.environ['TRANSFORMERS_CACHE'] = '/root/autodl-tmp/huggingface'
+os.environ['HUGGINGFACE_HUB_CACHE'] = '/root/autodl-tmp/huggingface'
+os.environ['TRITON_CACHE_DIR'] = '/root/autodl-tmp/triton'
+os.makedirs('/root/autodl-tmp/triton', exist_ok=True)
+
 import argparse
 from trl import SFTTrainer, SFTConfig
 from transformers import AutoTokenizer, AutoModel
@@ -47,17 +54,17 @@ class DataCollatorForProcessReward:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', type=str, default="DianJin-PRM/src/model/config.json")
+    parser.add_argument('--config_path', type=str, default="/root/workspace/qwen-dianjin/DianJin-PRM/src/model/config.json")
     parser.add_argument('--pretrained_model_path', type=str, default="Qwen/Qwen3-8B")
-    parser.add_argument('--data_path', type=str, default='DianJin-PRM/src/data/train.json')
-    parser.add_argument('--output_path', type=str, default="DianJin-PRM/src/checkpoint")
+    parser.add_argument('--data_path', type=str, default='/root/autodl-tmp/data/tongyi_dianjin/DATASET/train.jsonl')
+    parser.add_argument('--output_path', type=str, default="/root/autodl-tmp/checkpoint")
     parser.add_argument('--max_length', type=int, default=8192)
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--grad_accum', type=int, default=2)
     parser.add_argument('--learning_rate', type=float, default=2e-5)
-    parser.add_argument('--deepspeed_config', type=str, default='DianJin-PRM/src/train/deepspeed_config.json')
-    parser.add_argument('--local_rank', type=int, default=0, help='deepspeed distributed launch will pass this argument')
+    # parser.add_argument('--deepspeed_config', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/prm_trainer/deepspeed_config.json')
+    # parser.add_argument('--local_rank', type=int, default=0, help='deepspeed distributed launch will pass this argument')
     args = parser.parse_args()
 
     config = Qwen3PRMConfig.from_pretrained(args.config_path)
@@ -77,7 +84,7 @@ def main():
 
     training_args = SFTConfig(
         per_device_train_batch_size=args.batch_size,
-        gradient_accumulation_steps=args.grad_accum,
+        # gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.learning_rate,
         num_train_epochs=args.epochs,
         lr_scheduler_type="cosine",
@@ -89,12 +96,12 @@ def main():
         report_to="none",
         output_dir=args.output_path,
         do_train=True,
-        max_seq_length=args.max_length,
+        max_length =args.max_length,
         dataset_text_field='text',
         packing=False,
         dataset_kwargs={"skip_prepare_dataset": True},  # 跳过预处理数据集
         remove_unused_columns=False,  # 保留未使用的列
-        deepspeed=args.deepspeed_config,
+        # deepspeed=args.deepspeed_config,
         dataloader_pin_memory=False,
         disable_tqdm=False
     )

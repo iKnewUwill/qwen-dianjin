@@ -1,4 +1,5 @@
-from transformers.configuration_utils import PretrainedConfig, layer_type_validation
+# from transformers.configuration_utils import PretrainedConfig, layer_type_validation
+from transformers import PretrainedConfig
 from transformers.utils import logging
 from transformers.modeling_rope_utils import rope_config_validation
 
@@ -88,7 +89,7 @@ class Qwen3PRMConfig(PretrainedConfig):
                 else "full_attention"
                 for i in range(self.num_hidden_layers)
             ]
-        layer_type_validation(self.layer_types)
+        # layer_type_validation(self.layer_types)
 
         super().__init__(
             tie_word_embeddings=tie_word_embeddings,
