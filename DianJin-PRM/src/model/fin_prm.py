@@ -1,15 +1,16 @@
-from transformers import Qwen3Model, Qwen3PreTrainedModel
+from transformers import Qwen2Model, Qwen2PreTrainedModel
 from typing import Optional, List, Union, Tuple
 import torch.nn as nn
 import torch
 from transformers.modeling_outputs import TokenClassifierOutput
 from torch.nn import CrossEntropyLoss
 
-class Qwen3ForProcessRewardModel(Qwen3PreTrainedModel):
+
+class Qwen2ForProcessRewardModel(Qwen2PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.num_labels = config.num_labels
-        self.model = Qwen3Model(config)
+        self.model = Qwen2Model(config)
         self.score = nn.Sequential(
             nn.Linear(config.hidden_size, config.hidden_size),
             nn.ReLU(),
