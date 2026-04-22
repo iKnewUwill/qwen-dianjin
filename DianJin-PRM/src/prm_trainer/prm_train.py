@@ -21,10 +21,16 @@ class DataCollatorForProcessReward:
     def __call__(self, features):
         texts, labels_list = [], []
         for f in features:
-            trace = f["trace"].replace('\n\n', '<extra_0>') + '<extra_0>'
+            steps = f["steps"]
+            step_contents = list(steps.values())
+            trace = '<extra_0>'.join(step_contents) + '<extra_0>'
+
+            knowledge_items = f.get("knowledge_items", {})
+            knowledge_text = "\n".join([f"{k}: {v}" for k, v in knowledge_items.items()])
+
             labels = f["step_labels"]
             labels_list.append(labels)
-            text = f"##Question\n{f['question']}\n{f['choices']}\n\n##Thinking Trajectory\n{trace}\n\n##Final Answer\n{f['final_answer']}<extra_1>"
+            text = f"##Question\n{f['question']}\n\n##Knowledge\n{knowledge_text}\n\n##Thinking Trajectory\n{trace}\n\n##Final Answer\n{f['final_answer']}<extra_1>"
             texts.append(text)
 
         batch = self.tokenizer(
@@ -56,7 +62,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, default="/root/workspace/qwen-dianjin/DianJin-PRM/src/model/config.json")
     parser.add_argument('--pretrained_model_path', type=str, default="Qwen/Qwen3-8B")
-    parser.add_argument('--data_path', type=str, default='/root/autodl-tmp/data/tongyi_dianjin/DATASET/train.jsonl')
+    parser.add_argument('--data_path', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/task_20260420_191514_7e437cee.jsonl')
     parser.add_argument('--output_path', type=str, default="/root/autodl-tmp/checkpoint")
     parser.add_argument('--max_length', type=int, default=8192)
     parser.add_argument('--epochs', type=int, default=3)
