@@ -1,12 +1,12 @@
-from transformers import Qwen2Config
+from transformers import Qwen3Config
 from transformers.utils import logging
 
 logger = logging.get_logger(__name__)
 
 
-class Qwen2PRMConfig(Qwen2Config):
+class Qwen3PRMConfig(Qwen3Config):
 
-    model_type = "qwen2"
+    model_type = "qwen3"
 
     def __init__(
         self,

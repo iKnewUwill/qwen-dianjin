@@ -7,13 +7,13 @@ os.makedirs('/root/autodl-tmp/triton', exist_ok=True)
 
 import argparse
 import glob
-from trl import SFTTrainer, SFTConfig
+from transformers import Trainer, TrainingArguments
 from transformers import AutoTokenizer, AutoModel
 from datasets import load_dataset, concatenate_datasets
 from peft import LoraConfig, get_peft_model
 import torch
-from model.fin_prm import Qwen2ForProcessRewardModel
-from model.fin_config import Qwen2PRMConfig
+from model.fin_prm import Qwen3ForProcessRewardModel
+from model.fin_config import Qwen3PRMConfig
 
 
 class DataCollatorForProcessReward:
@@ -75,20 +75,20 @@ def load_jsonl_dataset(data_dir):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, default="/root/workspace/qwen-dianjin/DianJin-PRM/src/model/config.json")
-    parser.add_argument('--pretrained_model_path', type=str, default="/root/autodl-tmp/huggingface/models--Qwen--Qwen2.5-7B-Instruct/snapshots/a09a35458c702b33eeacc393d103063234e8bc28")
+    parser.add_argument('--pretrained_model_path', type=str, default="/root/autodl-tmp/huggingface/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218")
     parser.add_argument('--train_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/train')
     parser.add_argument('--val_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/validate')
     parser.add_argument('--test_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/test')
     parser.add_argument('--output_path', type=str, default="/root/autodl-tmp/checkpoint")
     parser.add_argument('--max_length', type=int, default=3072)
-    parser.add_argument('--epochs', type=int, default=3)
+    parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--grad_accum', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=2e-5)
     args = parser.parse_args()
 
-    config = Qwen2PRMConfig.from_pretrained(args.config_path)
-    model = Qwen2ForProcessRewardModel(config=config)
+    config = Qwen3PRMConfig.from_pretrained(args.config_path)
+    model = Qwen3ForProcessRewardModel(config=config)
     pretrained_model = AutoModel.from_pretrained(args.pretrained_model_path)
     model.model.load_state_dict(pretrained_model.state_dict(), strict=True)
     del pretrained_model
@@ -121,7 +121,7 @@ def main():
 
     data_collator = DataCollatorForProcessReward(tokenizer, max_length=args.max_length)
 
-    training_args = SFTConfig(
+    training_args = TrainingArguments(
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=1,
         gradient_accumulation_steps=args.grad_accum,
@@ -139,24 +139,19 @@ def main():
         output_dir=args.output_path,
         do_train=True,
         do_eval=True,
-        max_length=args.max_length,
-        dataset_text_field='text',
-        packing=False,
-        dataset_kwargs={"skip_prepare_dataset": True},
         remove_unused_columns=False,
         dataloader_pin_memory=False,
         disable_tqdm=False,
-        gradient_checkpointing=True,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
+        gradient_checkpointing=False,  # 与 PEFT modules_to_save 不兼容，但 98GB VRAM 足够
+        save_total_limit=3,
     )
 
-    trainer = SFTTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         data_collator=data_collator,
-        processing_class=tokenizer
     )
 
     trainer.train()

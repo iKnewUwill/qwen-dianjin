@@ -1,5 +1,4 @@
 export PYTHONPATH=$(dirname $(pwd)):$PYTHONPATH
 
-deepspeed \
-    --master_port=29501 \
-    prm_train.py
+# 单卡训练，无需 deepspeed launcher
+python3 prm_train.py "$@"
