@@ -25,13 +25,20 @@ class DataCollatorForProcessReward:
         texts, all_labels = [], []
         for f in features:
             steps = f["steps"]
-            step_contents = list(steps.values())
+            # Filter out None values and keep only valid string steps
+            step_keys = [k for k, v in steps.items() if v is not None]
+            step_contents = [v for v in steps.values() if v is not None]
+            if not step_contents:
+                continue
             trace = '<extra_0>'.join(step_contents) + '<extra_0>'
 
             knowledge_items = f.get("knowledge_items", {})
             knowledge_text = "\n".join([f"{k}: {v}" for k, v in knowledge_items.items()])
 
+            # Filter step_labels to match filtered steps
             step_labels = f["step_labels"]
+            if len(step_labels) > len(step_contents):
+                step_labels = step_labels[:len(step_contents)]
             all_labels.append((step_labels, f["trajectory_label"]))
             text = f"##Question\n{f['question']}\n\n##Knowledge\n{knowledge_text}\n\n##Thinking Trajectory\n{trace}\n\n##Final Answer\n{f['final_answer']}<extra_1>"
             texts.append(text)
