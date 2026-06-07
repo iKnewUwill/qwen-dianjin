@@ -1,5 +1,42 @@
+# Python
 __pycache__/
 *.pyc
-.ipynb_checkpoints/
 *.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs
 *.log
+logs/
+
+# Training data (large files, avoid bloating git)
+src/data_dpo/pre/
+src/data_dpo/train/
+src/data_dpo/validate/
+src/data_dpo/test/
+
+# Data archives
+*.zip
+*.tar.gz
+*.tar
+*.7z
+
+# Model weights / checkpoints (large binaries)
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.h5
+optimizer.pt
+rng_state.pth
+scheduler.pt
+
+# Process outputs / temporary files
+*.tmp
+*.temp
+*.lock
+*.pid
+_output.log
+_tmp_extract/
