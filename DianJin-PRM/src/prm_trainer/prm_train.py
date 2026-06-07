@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--val_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/validate')
     parser.add_argument('--test_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/test')
     parser.add_argument('--output_path', type=str, default="/root/autodl-tmp/checkpoint")
-    parser.add_argument('--max_length', type=int, default=3072)
+    parser.add_argument('--max_length', type=int, default=4096)
     parser.add_argument('--epochs', type=int, default=30)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--grad_accum', type=int, default=8)

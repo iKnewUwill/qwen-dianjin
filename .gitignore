@@ -1,3 +1,18 @@
 .DS_Store
 */.DS_Store
-.idea/*outputs/
+.idea/
+*outputs/
+*.pyc
+__pycache__/
+.ipynb_checkpoints/
+*.egg-info/
+
+# logs
+*.log
+logs/
+!logs/.gitkeep
+
+# checkpoints
+checkpoint/
+checkpoint_test/
+dpo_checkpoint/
