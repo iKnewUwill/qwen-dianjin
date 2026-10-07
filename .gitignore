@@ -16,3 +16,12 @@ logs/
 checkpoint/
 checkpoint_test/
 dpo_checkpoint/
+
+# data files (ignore jsonl data, keep code scripts)
+DianJin-PRM/src/data/
+DianJin-PRM/src/data_dpo/pre/
+DianJin-PRM/src/data_dpo/train/
+DianJin-PRM/src/data_dpo/validate/
+DianJin-PRM/src/data_dpo/test/
+DianJin-PRM/src/data_dpo/out/
+DianJin-PRM/src/data_dpo/train_old_backup/
