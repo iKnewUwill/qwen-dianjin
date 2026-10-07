@@ -214,7 +214,7 @@ nvidia-smi --query-gpu=name,memory.total,memory.used,utilization.gpu --format=cs
 
 ### 3.4 DPO 训练日志
 
-DPO 训练日志位于 `DianJin-PRM/docs/grpo_run.log`（历史记录）。
+DPO 训练日志位于 `DianJin-PRM/src/data_dpo/logs/{tag}_output.log`（由 `run_dpo_train.sh` 生成）。
 
 ---
 

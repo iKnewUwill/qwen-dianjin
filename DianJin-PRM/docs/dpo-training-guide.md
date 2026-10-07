@@ -49,7 +49,7 @@
 │   │   └── data/                 # 原始 DPO 数据输出目录
 │   │
 │   ├── data_dpo/                 # DPO 数据仓库（当前任务）
-│   │   ├── pre/                  # 原始样本（400 个 JSONL 文件）
+│   │   ├── pre/                  # 原始样本（dpo_pre.jsonl，4000 样本）
 │   │   ├── train/                # 训练集（dpo_train.jsonl）
 │   │   ├── validate/             # 验证集（dpo_val.jsonl）
 │   │   ├── test/                 # 测试集（dpo_test.jsonl）
@@ -97,7 +97,7 @@ DPO 偏好数据为 JSONL 格式，每行一条样本：
 │  Step 1: PRM 打分                                       │
 │  ┌──────────────┐     ┌────────────────┐                │
 │  │ pre/ 原始样本  │ ──▶ │ PRM 过程奖励模型 │                │
-│  │ (3候选人/问题) │     │ (Qwen3-8B+LoRA) │                │
+│  │ (4候选/问题)  │     │ (Qwen3-8B+LoRA) │                │
 │  └──────────────┘     └───────┬────────┘                │
 │                               │ 打分                    │
 │                               ▼                         │
@@ -152,7 +152,7 @@ DPO Loss:
 | 项目 | 路径 |
 |------|------|
 | PRM 配置 | `/root/workspace/qwen-dianjin/DianJin-PRM/src/model/config.json` |
-| PRM LoRA 权重 | `/root/autodl-tmp/checkpoint/checkpoint-1169/` |
+| PRM LoRA 权重 | `/root/autodl-tmp/checkpoint_prm_v2/checkpoint-1250/` |
 | PRM 模型定义 | `src/model/fin_prm.py` → `Qwen3ForProcessRewardModel` |
 | PRM 模型配置 | `src/model/fin_config.py` → `Qwen3PRMConfig` |
 
@@ -291,8 +291,9 @@ python build_dpo_dataset.py
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| NUM_FILES | 20 | 从 pre/ 读取的文件数 |
+| MAX_SAMPLES | None（全部） | 最多处理的样本数，可用 `--max_samples` 命令行参数覆盖 |
 | SEED | 42 | 随机种子（保证可复现） |
+| TEMPERATURE | 2.0 | PRM 打分温度（logits/温度后 softmax） |
 | MAX_SEQ_LENGTH | 4096 | PRM 输入最大长度 |
 | train:val:test | 7:2:1 | 数据拆分比例 |
 
@@ -441,12 +442,13 @@ outputs = model.generate(
 
 ### 7.4 重新构建 DPO 数据集
 
-如果 pre/ 目录下的文件有更新，或想使用不同数量的文件：
+如果 pre/ 目录下的样本有更新，或想限制处理的样本数量：
 
 ```bash
-# 1. 修改 build_dpo_dataset.py 中的 NUM_FILES 参数
-#    或在命令行修改：
-sed -i 's/NUM_FILES = 20/NUM_FILES = 50/' src/data_dpo/build_dpo_dataset.py
+# 1. 指定处理的样本数（--max_samples，不传则处理全部 4000 样本）
+#    快速测试示例：
+cd /root/workspace/qwen-dianjin/DianJin-PRM/src/data_dpo
+python build_dpo_dataset.py --max_samples 50
 
 # 2. 清空旧数据
 rm -f src/data_dpo/train/*.jsonl
