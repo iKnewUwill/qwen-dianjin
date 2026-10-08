@@ -88,10 +88,14 @@ def main():
     parser.add_argument('--test_data_dir', type=str, default='/root/workspace/qwen-dianjin/DianJin-PRM/src/data/test')
     parser.add_argument('--output_path', type=str, default="/root/autodl-tmp/checkpoint")
     parser.add_argument('--max_length', type=int, default=4096)
-    parser.add_argument('--epochs', type=int, default=30)
+    parser.add_argument('--epochs', type=int, default=5, help='训练 epoch 数（默认 5）')
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--grad_accum', type=int, default=8)
     parser.add_argument('--learning_rate', type=float, default=2e-5)
+    parser.add_argument('--max_train_samples', type=int, default=None,
+                        help='限制训练样本数（None=全部，用于数据规模消融）')
+    parser.add_argument('--resume_from_checkpoint', action='store_true',
+                        help='从 output_path 中最新 checkpoint 继续训练')
     args = parser.parse_args()
 
     config = Qwen3PRMConfig.from_pretrained(args.config_path)
@@ -120,6 +124,8 @@ def main():
     model.print_trainable_parameters()
 
     train_dataset = load_jsonl_dataset(args.train_data_dir)
+    if args.max_train_samples is not None and args.max_train_samples < len(train_dataset):
+        train_dataset = train_dataset.select(range(args.max_train_samples))
     print(f"Train dataset: {len(train_dataset)} samples")
     val_dataset = load_jsonl_dataset(args.val_data_dir)
     print(f"Validation dataset: {len(val_dataset)} samples")
@@ -161,7 +167,7 @@ def main():
         data_collator=data_collator,
     )
 
-    trainer.train()
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
 
     print("Training complete. Running test evaluation...")
     test_results = trainer.evaluate(eval_dataset=test_dataset)

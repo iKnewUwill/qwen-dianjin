@@ -20,6 +20,7 @@ VAL_DATA="${DATA_DIR}/validate/dpo_val.jsonl"
 
 EXPERIMENT_TAG=${1:-"dpo_$(date +%Y%m%d_%H%M%S)"}
 MAX_TRAIN_SAMPLES=${2:-""}
+BETA=${3:-0.1}
 
 mkdir -p "${LOG_DIR}"
 mkdir -p "/root/autodl-tmp/triton"
@@ -46,7 +47,7 @@ CMD="python ${TRAINER_SCRIPT} \
     --output_dir ${OUTPUT_DIR} \
     --max_length 3072 \
     --learning_rate 5e-6 \
-    --beta 0.1 \
+    --beta ${BETA} \
     --lora_r 16 \
     --lora_alpha 32 \
     --per_device_batch_size 1 \

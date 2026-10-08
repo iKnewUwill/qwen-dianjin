@@ -1,6 +1,7 @@
 """DPO 训练后验证集/测试集偏好评估。"""
 import os
 import json
+import argparse
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
@@ -95,6 +96,17 @@ def evaluate(model, ref_model, tokenizer, data_path):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='DPO 训练后偏好评估')
+    parser.add_argument('--lora', type=str,
+                        default="/root/autodl-tmp/dpo_checkpoint/dpo_v3_4000_20261001_203618",
+                        help='DPO policy LoRA 路径')
+    parser.add_argument('--beta', type=float, default=0.1,
+                        help='DPO 隐式奖励的 beta 系数（须与训练时一致）')
+    args = parser.parse_args()
+
+    global BETA
+    BETA = args.beta
+
     print("加载 tokenizer ...", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(BASE, trust_remote_code=True, padding_side="left")
     if tokenizer.pad_token is None:
@@ -104,7 +116,7 @@ def main():
     ref_model = load_model_with_peft(None)
 
     print("加载 policy 模型 (base + LoRA) ...", flush=True)
-    model = load_model_with_peft(LORA)
+    model = load_model_with_peft(args.lora)
 
     results = {}
     for name, path in SPLITS.items():

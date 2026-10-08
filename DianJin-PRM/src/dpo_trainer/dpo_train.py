@@ -245,6 +245,8 @@ def main():
                         help="跳过实验方案校验")
     parser.add_argument("--experiment_tag", type=str, default=None,
                         help="实验标签，用于日志命名")
+    parser.add_argument("--resume_from_checkpoint", action="store_true",
+                        help="从 output_dir 中最新 checkpoint 继续训练")
     parser.add_argument("--deepspeed", type=str, default=None,
                         help="DeepSpeed 配置文件路径")
     # DPO 特有的
@@ -373,7 +375,7 @@ def main():
     logger.info("=" * 60)
 
     try:
-        train_result = dpo_trainer.train()
+        train_result = dpo_trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
         logger.info("训练完成!")
 
         # 保存最终模型

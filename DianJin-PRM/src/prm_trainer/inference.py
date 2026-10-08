@@ -1,4 +1,4 @@
-import os, glob, json, torch, sys
+import os, glob, json, torch, sys, argparse
 os.environ['HF_HOME'] = '/root/autodl-tmp/huggingface'
 os.environ['TRANSFORMERS_CACHE'] = '/root/autodl-tmp/huggingface'
 os.environ['HUGGINGFACE_HUB_CACHE'] = '/root/autodl-tmp/huggingface'
@@ -57,7 +57,7 @@ def build_text(sample, tokenizer, max_tokens=4096):
     return make_text(kt)
 
 
-def score_sample(model, tokenizer, text, sep0_id, sep1_id, device='cuda', max_length=4096):
+def score_sample(model, tokenizer, text, sep0_id, sep1_id, device='cuda', max_length=4096, temperature=1.0):
     enc = tokenizer(text, truncation=True, max_length=max_length, return_tensors='pt')
     input_ids = enc['input_ids'].to(device)
     attn_mask = enc['attention_mask'].to(device)
@@ -65,7 +65,7 @@ def score_sample(model, tokenizer, text, sep0_id, sep1_id, device='cuda', max_le
     with torch.no_grad():
         with torch.amp.autocast('cuda', dtype=torch.bfloat16):
             outputs = model(input_ids=input_ids, attention_mask=attn_mask)
-        logits = outputs.logits.float()
+        logits = outputs.logits.float() / temperature
 
     mask = (input_ids[0] == sep0_id) | (input_ids[0] == sep1_id)
     positions = mask.nonzero(as_tuple=True)[0].tolist()
@@ -83,9 +83,18 @@ def score_sample(model, tokenizer, text, sep0_id, sep1_id, device='cuda', max_le
 
 
 def main():
+    parser = argparse.ArgumentParser(description='PRM 评估推理（步骤级/轨迹级准确率、错误召回、置信度）')
+    parser.add_argument('--ckpt_path', type=str,
+                        default='/root/autodl-tmp/checkpoint_prm_v2/checkpoint-1250',
+                        help='PRM LoRA checkpoint 路径')
+    parser.add_argument('--temperature', type=float, default=1.0,
+                        help='softmax 温度（logits/T），T>1 平滑概率分布')
+    args = parser.parse_args()
+
     config_path = '/root/workspace/qwen-dianjin/DianJin-PRM/src/model/config.json'
     base_path = '/root/autodl-tmp/huggingface/models--Qwen--Qwen3-8B/snapshots/b968826d9c46dd6066d109eabc6255188de91218'
-    ckpt_path = '/root/autodl-tmp/checkpoint/checkpoint-1169'
+    ckpt_path = args.ckpt_path
+    temperature = args.temperature
 
     config = Qwen3PRMConfig.from_pretrained(config_path)
     model = Qwen3ForProcessRewardModel(config=config)
@@ -103,6 +112,7 @@ def main():
     sep0_id = tokenizer.encode('<extra_0>', add_special_tokens=False)[0]
     sep1_id = tokenizer.encode('<extra_1>', add_special_tokens=False)[0]
 
+    summaries = {}
     for split_name, data_dir in [
         ('validate', '/root/workspace/qwen-dianjin/DianJin-PRM/src/data/validate'),
         ('test', '/root/workspace/qwen-dianjin/DianJin-PRM/src/data/test'),
@@ -110,11 +120,12 @@ def main():
         ds = load_jsonl_dataset(data_dir)
         total = len(ds)
         results = []
-        step_acc = {'correct': 0, 'total': 0, 'prob_1_correct': 0, 'prob_1_wrong': 0}
+        step_acc = {'correct': 0, 'total': 0, 'prob_1_correct': 0, 'prob_1_wrong': 0,
+                    'pos_total': 0, 'pos_correct': 0, 'neg_total': 0, 'neg_correct': 0}
 
         for i, sample in enumerate(ds):
             text = build_text(sample, tokenizer)
-            scores = score_sample(model, tokenizer, text, sep0_id, sep1_id)
+            scores = score_sample(model, tokenizer, text, sep0_id, sep1_id, temperature=temperature)
 
             step_labels = sample['step_labels']
             trajectory_label = sample['trajectory_label']
@@ -137,8 +148,14 @@ def main():
                         step_acc['correct'] += 1
                     if true == 1:
                         step_acc['prob_1_correct'] += s['prob_1']
+                        step_acc['pos_total'] += 1
+                        if pred == 1:
+                            step_acc['pos_correct'] += 1
                     else:
                         step_acc['prob_1_wrong'] += s['prob_1']
+                        step_acc['neg_total'] += 1
+                        if pred == 0:
+                            step_acc['neg_correct'] += 1
 
             final_score = scores[-1] if scores else None
             final_pred = 1 if (final_score and final_score['prob_1'] >= 0.5) else 0
@@ -161,17 +178,40 @@ def main():
             if (i + 1) % 100 == 0:
                 print(f'  Processed {i+1}/{total} samples...')
 
-        print(f'\n{split_name} results (total={total}):')
-        print(f'  Step-level accuracy: {step_acc["correct"]}/{step_acc["total"]} = {step_acc["correct"]/step_acc["total"]:.4f}' if step_acc['total'] > 0 else '  N/A')
-        if step_acc['prob_1_correct'] > 0:
-            print(f'  Avg prob_1 for correct steps: {step_acc["prob_1_correct"]/max(1, sum(1 for r in results for s in r["step_scores"] if s["true_label"]==1)):.4f}')
-        if step_acc['prob_1_wrong'] > 0:
-            print(f'  Avg prob_1 for wrong steps: {step_acc["prob_1_wrong"]/max(1, sum(1 for r in results for s in r["step_scores"] if s["true_label"]==0)):.4f}')
+        pos_total = step_acc['pos_total']
+        neg_total = step_acc['neg_total']
+        step_accuracy = step_acc['correct'] / step_acc['total'] if step_acc['total'] else 0.0
+        pos_recall = step_acc['pos_correct'] / pos_total if pos_total else 0.0
+        neg_recall = step_acc['neg_correct'] / neg_total if neg_total else 0.0
+        avg_pos = step_acc['prob_1_correct'] / pos_total if pos_total else 0.0
+        avg_neg = step_acc['prob_1_wrong'] / neg_total if neg_total else 0.0
+        gap = avg_pos - avg_neg
 
-        out_path = f'/root/autodl-tmp/inference_{split_name}.json'
+        print(f'\n{split_name} results (total={total}, T={temperature}):')
+        print(f'  步骤准确率: {step_acc["correct"]}/{step_acc["total"]} = {step_accuracy:.4f}')
+        print(f'  正确步骤召回率: {pos_recall:.4f} ({step_acc["pos_correct"]}/{pos_total})')
+        print(f'  错误步骤召回率: {neg_recall:.4f} ({step_acc["neg_correct"]}/{neg_total})')
+        print(f'  置信度差距: {gap:.4f} (正确 {avg_pos:.4f} - 错误 {avg_neg:.4f})')
+
+        out_path = f'/root/autodl-tmp/inference_{split_name}_T{temperature}.json'
         with open(out_path, 'w') as f:
             json.dump(results, f, ensure_ascii=False, indent=2)
         print(f'  Results saved to {out_path}')
+
+        summaries[split_name] = {
+            'temperature': temperature,
+            'step_accuracy': round(step_accuracy, 4),
+            'correct_recall': round(pos_recall, 4),
+            'error_recall': round(neg_recall, 4),
+            'confidence_gap': round(gap, 4),
+            'avg_prob_correct': round(avg_pos, 4),
+            'avg_prob_wrong': round(avg_neg, 4),
+        }
+
+    summary_path = f'/root/autodl-tmp/inference_summary_T{temperature}.json'
+    with open(summary_path, 'w') as f:
+        json.dump(summaries, f, ensure_ascii=False, indent=2)
+    print(f'\nSummary saved to {summary_path}')
 
 
 if __name__ == '__main__':
