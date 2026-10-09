@@ -102,10 +102,24 @@ def main():
                         help='DPO policy LoRA 路径')
     parser.add_argument('--beta', type=float, default=0.1,
                         help='DPO 隐式奖励的 beta 系数（须与训练时一致）')
+    parser.add_argument('--validate_path', type=str, default=None,
+                        help='验证集 JSONL 路径（默认用 DATA_DIR/validate）')
+    parser.add_argument('--test_path', type=str, default=None,
+                        help='测试集 JSONL 路径（默认用 DATA_DIR/test）')
+    parser.add_argument('--output', type=str, default=None,
+                        help='结果 JSON 输出路径')
     args = parser.parse_args()
 
     global BETA
     BETA = args.beta
+
+    splits = {}
+    if args.validate_path:
+        splits["validate"] = args.validate_path
+    if args.test_path:
+        splits["test"] = args.test_path
+    if not splits:
+        splits = SPLITS
 
     print("加载 tokenizer ...", flush=True)
     tokenizer = AutoTokenizer.from_pretrained(BASE, trust_remote_code=True, padding_side="left")
@@ -119,7 +133,7 @@ def main():
     model = load_model_with_peft(args.lora)
 
     results = {}
-    for name, path in SPLITS.items():
+    for name, path in splits.items():
         print(f"\n=== 评估 {name} ===", flush=True)
         results[name] = evaluate(model, ref_model, tokenizer, path)
         r = results[name]
@@ -128,7 +142,7 @@ def main():
               f"chosen_reward={r['mean_reward_chosen']:.4f}, "
               f"rejected_reward={r['mean_reward_rejected']:.4f}", flush=True)
 
-    out = "/root/autodl-tmp/dpo_v3_eval_results.json"
+    out = args.output or "/root/autodl-tmp/dpo_v3_eval_results.json"
     with open(out, "w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
     print(f"\n结果已保存: {out}", flush=True)
