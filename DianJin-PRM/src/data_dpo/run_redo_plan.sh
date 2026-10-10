@@ -85,7 +85,7 @@ run_job() {
 
   if [ $train_rc -ne 0 ]; then
     log "[JOB] $desc ($tag) 训练失败 rc=$train_rc"
-    append_summary "$desc" "$tag" "训练失败(rc=$train_rc)" "-" "-" "-" "${train_min}min"
+    append_summary "$desc" "$tag" "训练失败(rc=$train_rc)" "-" "-" "-" "$train_min"
     return 1
   fi
 
@@ -98,7 +98,7 @@ run_job() {
 
   if [ $eval_rc -ne 0 ] || [ ! -f "$eval_json" ]; then
     log "[JOB] $desc ($tag) 评估失败 rc=$eval_rc"
-    append_summary "$desc" "$tag" "训练OK评估失败" "-" "-" "-" "${train_min}min"
+    append_summary "$desc" "$tag" "训练OK评估失败" "-" "-" "-" "$train_min"
     return 0
   fi
 
@@ -107,7 +107,7 @@ run_job() {
   local val_margin=$(python3 -c "import json;d=json.load(open('$eval_json'));print(f\"{d['validate']['mean_margin']:.2f}\")" 2>/dev/null || echo "-")
 
   log "[JOB] $desc ($tag) 完成: val_acc=$val_acc test_acc=$test_acc val_margin=$val_margin"
-  append_summary "$desc" "$tag" "OK" "$val_acc" "$test_acc" "$val_margin" "${train_min}min"
+  append_summary "$desc" "$tag" "OK" "$val_acc" "$test_acc" "$val_margin" "$train_min"
   return 0
 }
 
