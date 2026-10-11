@@ -130,7 +130,7 @@ def extract_json(text):
     return None
 
 
-def load_model_and_tokenizer(model_type):
+def load_model_and_tokenizer(model_type, lora_path=None):
     tokenizer = AutoTokenizer.from_pretrained(
         BASE_MODEL, trust_remote_code=True, padding_side="left"
     )
@@ -145,7 +145,7 @@ def load_model_and_tokenizer(model_type):
         device_map="cuda",
     )
     if model_type == "dpo":
-        model = PeftModel.from_pretrained(model, LORA_PATH)
+        model = PeftModel.from_pretrained(model, lora_path or LORA_PATH)
     model.eval()
     return model, tokenizer
 
@@ -194,6 +194,10 @@ def main():
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--max_new_tokens", type=int, default=None,
                         help="覆盖生成时的 max_new_tokens（默认 2048）")
+    parser.add_argument("--lora", type=str, default=None,
+                        help="DPO LoRA 路径（默认用脚本内 LORA_PATH）")
+    parser.add_argument("--out_dir", type=str, default=None,
+                        help="输出目录（默认 test/<model>）")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -201,7 +205,7 @@ def main():
         GEN_KWARGS["max_new_tokens"] = args.max_new_tokens
 
     system_prompt = PromptsDPOConfig().solver_system_prompt
-    out_dir = os.path.join(DATA_DIR, "test", args.model)
+    out_dir = args.out_dir or os.path.join(DATA_DIR, "test", args.model)
     os.makedirs(out_dir, exist_ok=True)
 
     samples = []
@@ -219,7 +223,7 @@ def main():
     log(f"生成参数: {GEN_KWARGS}, batch_size={args.batch_size}")
 
     log("加载模型与 tokenizer ...")
-    model, tokenizer = load_model_and_tokenizer(args.model)
+    model, tokenizer = load_model_and_tokenizer(args.model, args.lora)
     gpu_free = torch.cuda.mem_get_info()[0] / (1024 ** 3)
     log(f"模型加载完成, GPU 剩余显存: {gpu_free:.1f} GB")
 
