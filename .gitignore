@@ -25,3 +25,5 @@ DianJin-PRM/src/data_dpo/validate/
 DianJin-PRM/src/data_dpo/test/
 DianJin-PRM/src/data_dpo/out/
 DianJin-PRM/src/data_dpo/train_old_backup/
+DianJin-PRM/src/data_dpo/rankings/
+DianJin-PRM/src/data_dpo/judge_inputs.jsonl
