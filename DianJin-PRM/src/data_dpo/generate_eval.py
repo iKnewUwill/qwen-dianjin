@@ -198,6 +198,8 @@ def main():
                         help="DPO LoRA 路径（默认用脚本内 LORA_PATH）")
     parser.add_argument("--out_dir", type=str, default=None,
                         help="输出目录（默认 test/<model>）")
+    parser.add_argument("--max_retries", type=int, default=MAX_RETRIES,
+                        help="提取失败后最多重试次数；总生成次数 = 1 + max_retries")
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
@@ -267,7 +269,7 @@ def main():
             json.dump(result, f, ensure_ascii=False, indent=2)
 
     t_start = time.time()
-    for attempt in range(1, MAX_RETRIES + 2):
+    for attempt in range(1, args.max_retries + 2):
         pending = [it for it in items if it["parsed"] is None and it["attempts"] < attempt]
         if not pending:
             break
