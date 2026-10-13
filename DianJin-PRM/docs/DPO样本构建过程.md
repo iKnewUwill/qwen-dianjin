@@ -182,7 +182,7 @@ TEMPERATURE = 2.0
 ```
 
 - softmax 前对 logits 除以温度 2.0，使概率分布更平滑。
-- 目的：缓解旧版 PRM 的 logits 极端化（`prob_1` 恒为 1.0）的过拟合问题，使 chosen/rejected 之间的 margin 更合理。
+- 目的：压缩概率分布、避免过置信，使 chosen/rejected 之间的 margin 更合理。（注：温度仅影响置信度数值，不影响以 `prob_1≥0.5` 为阈值的分类结果——温度消融已证 T=1.0~2.5 分类结果一致，见 `docs/消融实验结果.md` §2.1。）
 
 ---
 
