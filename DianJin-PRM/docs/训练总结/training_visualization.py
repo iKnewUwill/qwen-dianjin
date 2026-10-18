@@ -561,7 +561,7 @@ def plot_dpo_baseline_comparison():
                   'Chosen Avg', 'Rejected Avg']
 
     old_values = [0.004, 0.000, 0.8, 0.5, 0.0, 1.000, 0.996]
-    new_values = [0.348, 0.311, 82.0, 66.2, 26.3, 0.833, 0.500]
+    new_values = [0.348, 0.311, 82.0, 66.2, 26.3, 0.826, 0.478]
 
     fig, ax = plt.subplots(figsize=(12, 6))
     x = np.arange(len(categories))
@@ -589,7 +589,7 @@ def plot_dpo_baseline_comparison():
     ax.set_ylim(0, 120)
 
     # Add improvement annotations
-    improvements = ['87x', '--', '100x', '129x', '--', 'Better', 'Better']
+    improvements = ['87x', '--', '100x', '132x', '--', 'Better', 'Better']
     for i, (x_pos, imp) in enumerate(zip(x, improvements)):
         if imp not in ['--', 'Better']:
             ax.annotate(imp, xy=(x_pos, 105), ha='center', fontsize=9, fontweight='bold',
