@@ -23,7 +23,7 @@ SPLITS = {
 CHART_DIR = '/root/workspace/qwen-dianjin/DianJin-PRM/docs/训练总结/dpo_charts'
 os.makedirs(CHART_DIR, exist_ok=True)
 
-STYLE = {'dpi': 150, 'bbox_inches': 'tight', 'pad_inches': 0.2}
+STYLE = {'dpi': 350, 'bbox_inches': 'tight', 'pad_inches': 0.2}
 COLORS = {'train': '#2196F3', 'validate': '#4CAF50', 'test': '#FF9800'}
 
 

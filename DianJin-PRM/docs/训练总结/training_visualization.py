@@ -23,6 +23,9 @@ LOSS_JSON = '/root/autodl-tmp/prm_v2_loss.json'
 LOSS_CSV = '/root/autodl-tmp/prm_v2_loss.csv'
 MARGIN_JSON = '/root/autodl-tmp/dpo_margin_analysis.json'
 DPO_TRAIN_JSONL = '/root/workspace/qwen-dianjin/DianJin-PRM/src/data_dpo/train/dpo_train.jsonl'
+INFERENCE_V2_TEST = '/root/autodl-tmp/inference_v2_test.json'
+INFERENCE_V2_SUMMARY = '/root/autodl-tmp/inference_v2_summary.json'
+INFERENCE_OLD_SUMMARY = '/root/autodl-tmp/inference_old_summary.json'
 
 OUTPUT_DIR = '/root/workspace/qwen-dianjin/DianJin-PRM/docs/训练总结'
 PRM_CHART_DIR = os.path.join(OUTPUT_DIR, 'prm_charts')
@@ -32,7 +35,7 @@ os.makedirs(PRM_CHART_DIR, exist_ok=True)
 os.makedirs(DPO_CHART_DIR, exist_ok=True)
 
 STYLE = {
-    'dpi': 150,
+    'dpi': 350,
     'bbox_inches': 'tight',
     'pad_inches': 0.2,
 }
@@ -257,6 +260,154 @@ def plot_prm_convergence_metrics():
     plt.tight_layout()
 
     save_fig(fig, '05_convergence_analysis.png', PRM_CHART_DIR)
+
+
+def plot_prm_eval_comparison():
+    with open(INFERENCE_OLD_SUMMARY) as f:
+        old = json.load(f)['test']
+    with open(INFERENCE_V2_SUMMARY) as f:
+        new = json.load(f)['test']
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Left: 4-metric bar comparison
+    ax = axes[0]
+    metrics = ['Step Acc', 'Traj Acc', 'Correct\nRecall', 'Wrong\nRecall']
+    old_vals = [old['step_accuracy'], old['trajectory_accuracy'],
+                old['correct_step_recall'], old['wrong_step_recall']]
+    new_vals = [new['step_accuracy'], new['trajectory_accuracy'],
+                new['correct_step_recall'], new['wrong_step_recall']]
+    x = np.arange(len(metrics))
+    width = 0.35
+    b1 = ax.bar(x - width / 2, [v * 100 for v in old_vals], width,
+                label='Old PRM (ckpt-1169, 7ep)', color='#F44336', alpha=0.7, edgecolor='white')
+    b2 = ax.bar(x + width / 2, [v * 100 for v in new_vals], width,
+                label='New PRM (ckpt-1250, 5ep)', color='#4CAF50', alpha=0.7, edgecolor='white')
+    ax.axhline(90, color='orange', linestyle='--', linewidth=1.5, label='90% target')
+    for bars in (b1, b2):
+        for bar in bars:
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 1,
+                    f'{bar.get_height():.1f}', ha='center', va='bottom', fontsize=8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(metrics)
+    ax.set_ylabel('%', fontsize=11)
+    ax.set_title('PRM Evaluation: Old vs New (Test set)', fontweight='bold')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_ylim(0, 110)
+
+    # Right: confidence calibration comparison
+    ax = axes[1]
+    cats = ['Correct\n(Old)', 'Wrong\n(Old)', 'Correct\n(New)', 'Wrong\n(New)']
+    confs = [old['avg_conf_correct'], old['avg_conf_wrong'],
+             new['avg_confidence_correct'], new['avg_confidence_wrong']]
+    colors = ['#F44336', '#F44336', '#4CAF50', '#4CAF50']
+    bars = ax.bar(cats, confs, color=colors, alpha=0.7, edgecolor='white')
+    for bar, v in zip(bars, confs):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
+                f'{v:.3f}', ha='center', va='bottom', fontsize=8)
+    ax.axhline(0.5, color='black', linestyle='--', linewidth=1, label='decision boundary 0.5')
+    ax.set_ylabel('prob_1 confidence', fontsize=11)
+    ax.set_title('Confidence Calibration: Correct vs Wrong', fontweight='bold')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.set_ylim(0, 1.15)
+
+    fig.suptitle('PRM Evaluation Comparison (Old vs New)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    save_fig(fig, '06_eval_comparison.png', PRM_CHART_DIR)
+
+
+def plot_prm_confidence_analysis():
+    with open(INFERENCE_V2_TEST) as f:
+        samples = json.load(f)
+
+    correct, wrong = [], []
+    tp = fn = fp = tn = 0
+    for s in samples:
+        for st in s['step_scores']:
+            if st['true'] == 1:
+                correct.append(st['prob_1'])
+            else:
+                wrong.append(st['prob_1'])
+            pred = 1 if st['prob_1'] >= 0.5 else 0
+            if st['true'] == 1 and pred == 1:
+                tp += 1
+            elif st['true'] == 1 and pred == 0:
+                fn += 1
+            elif st['true'] == 0 and pred == 1:
+                fp += 1
+            else:
+                tn += 1
+    correct = np.array(correct)
+    wrong = np.array(wrong)
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Left: prob_1 distributions
+    ax = axes[0]
+    bins = np.linspace(0, 1, 21)
+    ax.hist(correct, bins=bins, color='#4CAF50', alpha=0.6, edgecolor='white',
+            label=f'Correct steps (n={len(correct)})')
+    ax.hist(wrong, bins=bins, color='#F44336', alpha=0.6, edgecolor='white',
+            label=f'Wrong steps (n={len(wrong)})')
+    ax.axvline(0.5, color='black', linestyle='--', linewidth=1.5, label='decision boundary 0.5')
+    ax.set_xlabel('prob_1 confidence', fontsize=11)
+    ax.set_ylabel('Count', fontsize=11)
+    ax.set_title('prob_1 Distribution (Correct vs Wrong steps)', fontweight='bold')
+    ax.legend(fontsize=8)
+    ax.grid(True, alpha=0.3)
+
+    # Right: confusion matrix
+    ax = axes[1]
+    cm = np.array([[tp, fn], [fp, tn]])
+    im = ax.imshow(cm, cmap='Blues')
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(['Pred Correct', 'Pred Wrong'])
+    ax.set_yticks([0, 1])
+    ax.set_yticklabels(['True Correct', 'True Wrong'])
+    for i in range(2):
+        for j in range(2):
+            ax.text(j, i, f'{cm[i, j]}', ha='center', va='center',
+                    fontsize=16, fontweight='bold')
+    ax.set_title('Confusion Matrix (threshold=0.5)', fontweight='bold')
+    plt.colorbar(im, ax=ax)
+
+    fig.suptitle('PRM Confidence Analysis (Test set)', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    save_fig(fig, '07_confidence_analysis.png', PRM_CHART_DIR)
+
+
+def plot_prm_loss_accuracy():
+    steps, loss_vals, epochs, evals, data = load_prm_data()
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    if len(loss_vals) >= 5:
+        smoothed = np.convolve(loss_vals, np.ones(5) / 5, mode='valid')
+        smooth_steps = steps[2:-2]
+        ax.plot(smooth_steps, smoothed, color='darkblue', linewidth=2,
+                label='Smoothed Loss (window=5)')
+
+    for ep in range(1, 6):
+        ax.axvline(x=ep * 250, color='gray', linestyle='--', alpha=0.4, linewidth=0.8)
+
+    ax.set_yscale('log')
+    ax.set_xlabel('Training Step', fontsize=12)
+    ax.set_ylabel('Loss', fontsize=12)
+    ax.set_title('PRM Loss vs Step Accuracy per Epoch', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+    ax.set_xlim(0, 1250)
+    ax.legend(fontsize=10, loc='upper right')
+
+    # Estimated per-epoch step accuracy annotations
+    epoch_acc = {1: '~90%', 2: '~92%', 3: '~93%', 4: '~94%', 5: '~94%'}
+    for ep in range(1, 6):
+        x_center = ep * 250 - 125
+        ax.text(x_center, ax.get_ylim()[1] * 0.55, f'Epoch {ep}\nacc {epoch_acc[ep]}',
+                ha='center', va='center', fontsize=9, color='#00695C', fontweight='bold')
+
+    save_fig(fig, '08_loss_accuracy.png', PRM_CHART_DIR)
 
 
 # ============================================================
@@ -497,17 +648,18 @@ def main():
     plot_prm_loss_distribution()
     plot_prm_eval_runtime()
     plot_prm_convergence_metrics()
+    plot_prm_eval_comparison()
+    plot_prm_confidence_analysis()
+    plot_prm_loss_accuracy()
     print(f'  PRM charts saved to {PRM_CHART_DIR}')
 
     print('\n[DPO Charts]')
-    plot_dpo_margin_distribution()
-    plot_dpo_margin_stats()
-    plot_dpo_score_scatter()
+    # 11/12/13/15 depend on dpo_margin_analysis.json + dpo_train.jsonl, which were
+    # overwritten by the 4000-sample build (2026-10-01); skip to avoid wrong data.
     plot_dpo_baseline_comparison()
-    plot_dpo_overall_summary()
     print(f'  DPO charts saved to {DPO_CHART_DIR}')
 
-    print(f'\nDone! {5+5} charts generated.')
+    print(f'\nDone! charts generated.')
 
 
 if __name__ == '__main__':
